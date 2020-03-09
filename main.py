@@ -61,7 +61,14 @@ async def bind(ctx):
 # Discord ID unbinding
 @client.command(aliases = ['Unbind', 'UNBIND'])
 async def unbind(ctx):
-	await ctx.send(str(ctx.message.author.mention) + ' 已解除綁定')
+	try:
+		resultCell = sh_ID.find(str(ctx.message.author.id))
+		dc_dict.pop(str(ctx.message.author.id), None)
+		sh_ID.update_cell(resultCell.row, resultCell.col, '')
+		sh_ID.update_cell(resultCell.row, resultCell.col-1, '')
+		await ctx.send(str(ctx.message.author.mention) + ' 已解除綁定')
+	except:
+		await ctx.send(str(ctx.message.author.mention) + ' 你根本沒綁定')
 
 # User manual -> !help
 @client.command(aliases = ['Manual', 'man'])
@@ -139,11 +146,10 @@ async def ss(ctx):
 	inArr = str(ctx.message.content).split()
 	if len(inArr) == 2:
 		inArr = str(ctx.message.content).split()
-		ds = "Day" + inArr[1]
-		sh_RECORD = gc.open('botTest').worksheet(ds)
-		await ctx.send('Worksheet switch to Day' + inArr[1])
+		sh_RECORD = gc.open('botTest').worksheet(inArr[1])
+		await ctx.send('Worksheet switch to ' + inArr[1])
 	else:
-		await ctx.send('Syntax Error. !ss <Number of Day>')
+		await ctx.send('Syntax Error. !ss <SheetName>')
 
 
 # prevent syntax error & 代刀操作
@@ -179,10 +185,11 @@ async def stop(ctx):
 	resultCell = sh_DMG.find(dc_dict[str(ctx.message.author.id)])
 	sh_DMG.update_cell(resultCell.row, 3, inArr[1])
 	sh_DMG.update_cell(resultCell.row, 4, inArr[2])
-	sh_DMG.update_cell(resultCell.row, 9, inArr[3])
+	try:
+		sh_DMG.update_cell(resultCell.row, 9, inArr[3])
 	await ctx.send(str(ctx.message.author.mention) + ', 已完成回報傷害。')
 
-# Overview
+# Overview(UNDONE!)
 @client.command(aliases = ['Status'])
 async def status(ctx):
 	resultList = sh_DMG.findall("TRUE")
