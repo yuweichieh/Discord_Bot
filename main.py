@@ -46,8 +46,8 @@ async def bind(ctx):
 			try:
 				resultCell = sh_ID.find(inArr[1])
 				dc_dict[str(ctx.message.author.id)] = inArr[1]
-				sh_ID.update_cell(resultCell.row, resultCell.col+1, str(ctx.message.author))
-				sh_ID.update_cell(resultCell.row, resultCell.col+2, str(ctx.message.author.id))
+				sh_ID.update_cell(resultCell.row, 2, str(ctx.message.author))
+				sh_ID.update_cell(resultCell.row, 3, str(ctx.message.author.id))
 				await ctx.send(str(ctx.message.author.mention) + ' 已成功與'+ inArr[1] + '綁定')
 			except:
 				await ctx.send(str(ctx.message.author.mention) + ' ID Not Found')
@@ -56,7 +56,7 @@ async def bind(ctx):
 		else:
 			await ctx.send(str(ctx.message.author.mention) + ' 你已經與ID: '+ str(dc_dict[str(ctx.message.author.id)] + '綁定，欲更換ID請先解除綁定。'))
 	else:
-		await ctx.send("Syntax Error. !bind <遊戲ID>")
+		await ctx.send(str(ctx.message.author.mention) + "Syntax Error. !bind <遊戲ID>")
 
 # Discord ID unbinding
 @client.command(aliases = ['Unbind', 'UNBIND'])
@@ -64,8 +64,8 @@ async def unbind(ctx):
 	try:
 		resultCell = sh_ID.find(str(ctx.message.author.id))
 		dc_dict.pop(str(ctx.message.author.id), None)
-		sh_ID.update_cell(resultCell.row, resultCell.col, '')
-		sh_ID.update_cell(resultCell.row, resultCell.col-1, '')
+		sh_ID.update_cell(resultCell.row, 2, '')
+		sh_ID.update_cell(resultCell.row, 3, '')
 		await ctx.send(str(ctx.message.author.mention) + ' 已解除綁定')
 	except:
 		await ctx.send(str(ctx.message.author.mention) + ' 你根本沒綁定')
@@ -74,13 +74,14 @@ async def unbind(ctx):
 @client.command(aliases = ['Manual', 'man', 'cmd'])
 async def manual(ctx):
 	await ctx.send('```Current Commands:\
+		\n\t更新表單ID_List: !update\
 		\n\t表單名稱綁定: !unbind \
 		\n\t解除表單名稱綁定: !bind <遊戲ID>\
-		\n\t出刀傷害紀錄: !fill <週目-王> <傷害> <返還秒數>\
 		\n\t集刀報名: !報\
 		\n\t回報傷害: !卡 <傷害> <秒數> <備註(選填)>\
 		\n\t退刀: !退\
 		\n\t集刀狀況： !status (Undone) \
+		\n\t結刀傷害紀錄: !fill <週目-王> <傷害> <返還秒數>\
 		\n\t表單換日： !ss <SheetName>```')
 
 # UNDONE
@@ -88,7 +89,6 @@ async def manual(ctx):
 @client.command(aliases = ['FILL', 'Fill', '結'])
 async def fill(ctx):
 	inArr = str(ctx.message.content).split()
-
 	resultCell = sh_RECORD.find(dc_dict[str(ctx.message.author.id)])
 	# 1st Undone
 	if sh_RECORD.cell(resultCell.row, 3).value == '':
@@ -108,14 +108,19 @@ async def fill(ctx):
 	# 3rd Return Undone
 	elif sh_RECORD.cell(resultCell.row, 21).value == '' and sh_RECORD.cell(resultCell.row, 14).value == 'TRUE':
 		prefix = 21
+	else:
+		await ctx.send(str(ctx.message.author.mention) + ', 你已經沒刀了')
+		return
 
 	if len(inArr) == 3:
 		await ctx.send(str(ctx.message.author.mention) + ' 成績填寫。\n對' + inArr[1] + '王造成' + inArr[2] + '傷害')
 	elif len(inArr) == 4 and (prefix == 3 or prefix == 7 or prefix == 11):
 		sh_RECORD.update_cell(resultCell.row, prefix+3, "TRUE")
 		await ctx.send(str(ctx.message.author.mention) + ' 成績填寫, \n對' + inArr[1] + '王造成' + inArr[2] + '傷害' + '\t返還：' + inArr[3])
+	elif len(inArr) == 4:
+		await ctx.send(str(ctx.message.author.mention) + ', 你的補償刀呢')
 	else:
-		await ctx.send('Syntax Error. !fill <週目-王> <傷害> <返還秒數(Optional)>')
+		await ctx.send(str(ctx.message.author.mention) + 'Syntax Error. !fill <週目-王> <傷害> <返還秒數(Optional)>')
 		return
 
 	bossInfo = inArr[1].split("-")
@@ -150,9 +155,9 @@ async def ss(ctx):
 	if len(inArr) == 2:
 		inArr = str(ctx.message.content).split()
 		sh_RECORD = gc.open('botTest').worksheet(inArr[1])
-		await ctx.send('Worksheet switch to ' + inArr[1])
+		await ctx.send('```Worksheet switch to ' + inArr[1] + '```')
 	else:
-		await ctx.send('Syntax Error. !ss <SheetName>')
+		await ctx.send(str(ctx.message.author.mention) + 'Syntax Error. !ss <SheetName>')
 
 
 # prevent syntax error & 代刀操作
