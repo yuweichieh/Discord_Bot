@@ -16,7 +16,7 @@ sh_DMG = gc.open('botTest').worksheet("集刀表")
 # find的表單名稱不可英數混合 ex. Day1 -> X
 sh_RECORD = gc.open('botTest').worksheet("1/1")
 
-# Bot Online & Load User Data Form(Done)
+# Bot Online & Load User Data Form
 @client.event
 async def on_ready():
 	ids = sh_ID.col_values(1)
@@ -26,7 +26,44 @@ async def on_ready():
 			dc_dict[dcs[i]] = ids[i];
 	print("Bot is Ready")
 
-# ID.Data List Update(Done)
+# User manual
+@client.command(aliases = ['Manual', 'man', 'cmd'])
+async def manual(ctx):
+	await ctx.send('```Current Commands:\
+		\n\t更新表單ID_List: !update\
+		\n\t表單名稱綁定: !unbind \
+		\n\t解除表單名稱綁定: !bind <遊戲ID>\
+		\n\t集刀報名: !報 <ID(選填)>\
+		\n\t回報傷害: !卡 <ID(選填) ><傷害> <秒數> <備註>\
+		\n\t退刀: !退 <ID(代刀用)>\
+		\n\t集刀狀況 Undone!!!: !status \
+		\n\t結刀紀錄: !fill <週目-王> <傷害> <返還秒數(有返還才填)>\
+		\n\t閃退登記: !閃 <ID(選填)>\
+		\n\t代結刀紀錄 Undone!!!: !fillfor <ID> <週目-王> <傷害> <返還秒數(有返還才填)>\
+		\n\t表單換日： !ss <SheetName>```')
+
+# Flash Report
+@client.command(aliases = ['閃', '閃退登記'])
+async def flash(ctx):
+	inArr = str(ctx.message.content).split()
+	if len(inArr) == 1:
+		try:
+			resultCell = sh_RECORD.find(dc_dict[str(ctx.message.author.id)])
+			sh_RECORD.update_cell(resultCell.row, 2, "TRUE")
+		except:
+			await ctx.send(str(ctx.message.author.mention) + ', 請先和表單上ID綁定')
+			return
+		await ctx.send(str(ctx.message.author.mention) + ', 已登記閃退')
+	else:	
+		try:
+			resultCell = sh_RECORD.find(inArr[1])
+			sh_RECORD.update_cell(resultCell.row, 2, "TRUE")
+		except:
+			await ctx.send(str(ctx.message.author.mention) + ', ID:' + inArr[1] + ' 不存在')
+			return
+		await ctx.send(str(ctx.message.author.mention) + ', ID:' + inArr[1] + ' 已登記閃退')
+
+# ID.Data List Update
 @client.command(aliases = ['Update', 'UPDATE'])
 async def update(ctx):
 	ids = sh_ID.col_values(1)
@@ -37,7 +74,7 @@ async def update(ctx):
 
 	await ctx.send('```ID List Updated.```')
 
-# Discord ID binding(Done)
+# Discord ID binding
 @client.command(aliases = ['Bind', 'BIND'])
 async def bind(ctx):
 	inArr = str(ctx.message.content).split()
@@ -63,33 +100,23 @@ async def bind(ctx):
 async def unbind(ctx):
 	try:
 		resultCell = sh_ID.find(str(ctx.message.author.id))
-		dc_dict.pop(str(ctx.message.author.id), None)
-		sh_ID.update_cell(resultCell.row, 2, '')
-		sh_ID.update_cell(resultCell.row, 3, '')
-		await ctx.send(str(ctx.message.author.mention) + ' 已解除綁定')
 	except:
 		await ctx.send(str(ctx.message.author.mention) + ' 你根本沒綁定')
+		return
+	dc_dict.pop(str(ctx.message.author.id), None)
+	sh_ID.update_cell(resultCell.row, 2, '')
+	sh_ID.update_cell(resultCell.row, 3, '')
+	await ctx.send(str(ctx.message.author.mention) + ' 已解除綁定')
 
-# User manual -> !help
-@client.command(aliases = ['Manual', 'man', 'cmd'])
-async def manual(ctx):
-	await ctx.send('```Current Commands:\
-		\n\t更新表單ID_List: !update\
-		\n\t表單名稱綁定: !unbind \
-		\n\t解除表單名稱綁定: !bind <遊戲ID>\
-		\n\t集刀報名: !報\
-		\n\t回報傷害: !卡 <傷害> <秒數> <備註(選填)>\
-		\n\t退刀: !退\
-		\n\t集刀狀況： !status (Undone) \
-		\n\t結刀傷害紀錄: !fill <週目-王> <傷害> <返還秒數>\
-		\n\t表單換日： !ss <SheetName>```')
-
-# UNDONE
 # Damage filling
 @client.command(aliases = ['FILL', 'Fill', '結'])
 async def fill(ctx):
 	inArr = str(ctx.message.content).split()
-	resultCell = sh_RECORD.find(dc_dict[str(ctx.message.author.id)])
+	try:
+		resultCell = sh_RECORD.find(dc_dict[str(ctx.message.author.id)])
+	except:
+		await ctx.send(str(ctx.message.author.mention) + ', 請先和表單上ID綁定, 再結算傷害')
+		return
 	# 1st Undone
 	if sh_RECORD.cell(resultCell.row, 3).value == '':
 		prefix = 3
@@ -154,52 +181,118 @@ async def ss(ctx):
 	inArr = str(ctx.message.content).split()
 	if len(inArr) == 2:
 		inArr = str(ctx.message.content).split()
-		sh_RECORD = gc.open('botTest').worksheet(inArr[1])
-		await ctx.send('```Worksheet switch to ' + inArr[1] + '```')
+		try:
+			sh_RECORD = gc.open('botTest').worksheet(inArr[1])
+			await ctx.send('```Worksheet switch to ' + inArr[1] + '```')
+		except:
+			await ctx.send('```Worksheet switching Error```')
 	else:
 		await ctx.send(str(ctx.message.author.mention) + 'Syntax Error. !ss <SheetName>')
 
 
-# prevent syntax error & 代刀操作
 # Regist
 @client.command(aliases = ['報', '報名'])
 async def reg(ctx):
-	resultCell = sh_DMG.find(dc_dict[str(ctx.message.author.id)])
-	sh_DMG.update_cell(resultCell.row, resultCell.col+1, 'TRUE')
-	for i in range(3,5):
-		sh_DMG.update_cell(resultCell.row, i, '')
-	for i in range(6,9):	
-		sh_DMG.update_cell(resultCell.row, i, 'FALSE')
-	sh_DMG.update_cell(resultCell.row, 9, '')
-	await ctx.send(str(ctx.message.author.mention) + ', 已報名。')
+	inArr = str(ctx.message.content).split()
+	if len(inArr) == 1:
+		try:
+			resultCell = sh_DMG.find(dc_dict[str(ctx.message.author.id)])
+		except:
+			await ctx.send(str(ctx.message.author.mention) + ', 請先和表單上ID綁定, 再開始出刀')
+			return
+		sh_DMG.update_cell(resultCell.row, 2, 'TRUE')
+		for i in range(3,5):
+			sh_DMG.update_cell(resultCell.row, i, '')
+		for i in range(6,9):	
+			sh_DMG.update_cell(resultCell.row, i, 'FALSE')
+		sh_DMG.update_cell(resultCell.row, 9, '')
+		await ctx.send(str(ctx.message.author.mention) + ', 已報名。')
+	else:
+		try:
+			resultCell = sh_DMG.find(inArr[1])
+		except:
+			await ctx.send(str(ctx.message.author.mention) + ', ID:' + inArr[1] + ' 不存在')
+			return
+		sh_DMG.update_cell(resultCell.row, 2, 'TRUE')
+		for i in range(3,5):
+			sh_DMG.update_cell(resultCell.row, i, '')
+		for i in range(6,9):	
+			sh_DMG.update_cell(resultCell.row, i, 'FALSE')
+		sh_DMG.update_cell(resultCell.row, 9, '')
+		await ctx.send(str(ctx.message.author.mention) + ', 已報名。')
+
 
 # de-Regist
 @client.command(aliases = ['退'])
 async def dereg(ctx):
-	resultCell = sh_DMG.find(dc_dict[str(ctx.message.author.id)])
-	sh_DMG.update_cell(resultCell.row, 2, 'FALSE')
-	# Clear input
-	for i in range(3,5):
-		sh_DMG.update_cell(resultCell.row, i, '')
-	for i in range(6,9):	
-		sh_DMG.update_cell(resultCell.row, i, 'FALSE')
-	sh_DMG.update_cell(resultCell.row, 9, '')
-	await ctx.send(str(ctx.message.author.mention) + ', 已退刀，你打得爛死。')
+	inArr = str(ctx.message.content).split()
+	if len(inArr) == 1:
+		try:
+			resultCell = sh_DMG.find(dc_dict[str(ctx.message.author.id)])
+		except:
+			await ctx.send(str(ctx.message.author.mention) + ', 請先和表單上ID綁定, 再開始出刀')
+			return
+		sh_DMG.update_cell(resultCell.row, 2, 'FALSE')
+		# Clear input
+		for i in range(3,5):
+			sh_DMG.update_cell(resultCell.row, i, '')
+		for i in range(6,9):	
+			sh_DMG.update_cell(resultCell.row, i, 'FALSE')
+		sh_DMG.update_cell(resultCell.row, 9, '')
+		await ctx.send(str(ctx.message.author.mention) + ', 已退刀, 你打得爛死。')
+	else:
+		try:
+			resultCell = sh_DMG.find(inArr[1])
+		except:
+			await ctx.send(str(ctx.message.author.mention) + ', ID:' + inArr[1] + ' 不存在')
+			return
+		sh_DMG.update_cell(resultCell.row, 2, 'FALSE')
+		# Clear input
+		for i in range(3,5):
+			sh_DMG.update_cell(resultCell.row, i, '')
+		for i in range(6,9):	
+			sh_DMG.update_cell(resultCell.row, i, 'FALSE')
+		sh_DMG.update_cell(resultCell.row, 9, '')
+		await ctx.send(str(ctx.message.author.mention) + ', 已退刀, 你打得爛死。')
 
 # DMG report
 @client.command(aliases = ['卡'])
 async def stop(ctx):
 	inArr = str(ctx.message.content).split()
-	if len(inArr) >= 3:
-		resultCell = sh_DMG.find(dc_dict[str(ctx.message.author.id)])
+	if len(inArr) == 4:
+		try:
+			resultCell = sh_DMG.find(dc_dict[str(ctx.message.author.id)])
+		except:
+			await ctx.send(str(ctx.message.author.mention) + ', 請先和表單上ID綁定, 再開始出刀')
+			return
+		val = sh_DMG.cell(resultCell.row, 2).value
+		if val=='FALSE':
+			await ctx.send(str(ctx.message.author.mention) + ', 沒報名卡什麼卡二二')
+			return
 		sh_DMG.update_cell(resultCell.row, 3, inArr[1])
 		sh_DMG.update_cell(resultCell.row, 4, inArr[2])
 		try:
 			sh_DMG.update_cell(resultCell.row, 9, inArr[3])
 		finally:
 			await ctx.send(str(ctx.message.author.mention) + ', 已回報傷害。')
+	elif len(inArr) == 5:
+		try:
+			resultCell = sh_DMG.find(inArr[1])
+		except:
+			await ctx.send(str(ctx.message.author.mention) + ', ID:' + inArr[1] + ' 不存在')
+			return
+		val = sh_DMG.cell(resultCell.row, 2).value
+		if val=='FALSE':
+			await ctx.send(str(ctx.message.author.mention) + ', 沒報名卡什麼卡二二')
+			return
+		sh_DMG.update_cell(resultCell.row, 3, inArr[2])
+		sh_DMG.update_cell(resultCell.row, 4, inArr[3])
+		try:
+			sh_DMG.update_cell(resultCell.row, 9, inArr[4])
+		finally:
+			await ctx.send(str(ctx.message.author.mention) + ', 已回報傷害。')
 	else:
-		await ctx.send(str(ctx.message.author.mention) + ', Syntax Error: !卡 <傷害> <秒數> <備註(選填)>')
+		await ctx.send(str(ctx.message.author.mention) + ', Syntax Error: !卡 <代刀ID(選填)> <傷害> <秒數> <備註>')
 
 # Overview(UNDONE!)
 @client.command(aliases = ['Status'])
