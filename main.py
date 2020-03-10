@@ -21,9 +21,9 @@ sh_RECORD = gc.open('botTest').worksheet("1/1")
 async def on_ready():
 	ids = sh_ID.col_values(1)
 	dcs = sh_ID.col_values(3)
-	for i in range(len(ids)-1):
+	for i in range(len(ids)):
 		if i<len(dcs):
-			dc_dict[dcs[i]] = ids[i];
+			dc_dict[str(dcs[i])] = ids[i];
 	print("Bot is Ready")
 
 # User manual
@@ -70,7 +70,7 @@ async def update(ctx):
 	dcs = sh_ID.col_values(3)
 	for i in range(len(ids)-1):
 		if i<len(dcs):
-			dc_dict[dcs[i]] = ids[i];
+			dc_dict[str(dcs[i])] = ids[i];
 
 	await ctx.send('```ID List Updated.```')
 
@@ -213,7 +213,7 @@ async def reg(ctx):
 		await ctx.send(str(ctx.message.author.mention) + ', 已報名。')
 	else:
 		try:
-			resultCell = sh_DMG.find(inArr[1])
+			resultCell = sh_DMG.find(str(inArr[1]))
 		except:
 			await ctx.send(str(ctx.message.author.mention) + ', ID:' + inArr[1] + ' 不存在')
 			return
@@ -246,7 +246,7 @@ async def dereg(ctx):
 		await ctx.send(str(ctx.message.author.mention) + ', 已退刀, 你打得爛死。')
 	else:
 		try:
-			resultCell = sh_DMG.find(inArr[1])
+			resultCell = sh_DMG.find(str(inArr[1]))
 		except:
 			await ctx.send(str(ctx.message.author.mention) + ', ID:' + inArr[1] + ' 不存在')
 			return
@@ -281,7 +281,7 @@ async def stop(ctx):
 			await ctx.send(str(ctx.message.author.mention) + ', 已回報傷害。')
 	elif len(inArr) == 5:
 		try:
-			resultCell = sh_DMG.find(inArr[1])
+			resultCell = sh_DMG.find(str(inArr[1]))
 		except:
 			await ctx.send(str(ctx.message.author.mention) + ', ID:' + inArr[1] + ' 不存在')
 			return
@@ -306,11 +306,11 @@ async def status(ctx):
 	except:
 		await ctx.send('```集刀表欄位撈取失敗, 請重試```')
 		return
-	msg = "```當前集刀狀況：\n----------------\n"
+	msg = "```當前集刀狀況：\n----------------\n排名 ID\t 傷害 秒數 備註\n"
 	for i in range(2, 32):
 		if regStat[i] == "TRUE":
 			ppl = sh_DMG.row_values(i+1)
-			msg = msg + str(ppl[4]) + " - " + str(ppl[0]) + ": " + str(ppl[2]) + ", " + str(ppl[3]) + ", " + str(ppl[8]) + "\n"
+			msg = msg + str(ppl[4]) + " - " + str(ppl[0]) + ": " + str(ppl[2]) + " " + str(ppl[3]) + " " + str(ppl[8]) + "\n"
 	msg = msg + "----------------\n報名人數： " + str(regStat[31]) + "```"
 	await ctx.send(msg)
 
