@@ -35,7 +35,7 @@ async def manual(ctx):
 		\n\t解除表單名稱綁定: !bind <遊戲ID>\
 		\n\t集刀報名: !報 <ID(選填)>\
 		\n\t回報傷害: !卡 <ID(選填) ><傷害> <秒數> <備註>\
-		\n\t退刀: !退 <ID(代刀用)>\
+		\n\t退刀: !退 <ID(選填)>\
 		\n\t集刀狀況 Undone!!!: !status \
 		\n\t結刀紀錄: !fill <週目-王> <傷害> <返還秒數(有返還才填)>\
 		\n\t閃退登記: !閃 <ID(選填)>\
@@ -295,8 +295,17 @@ async def stop(ctx):
 		await ctx.send(str(ctx.message.author.mention) + ', Syntax Error: !卡 <代刀ID(選填)> <傷害> <秒數> <備註>')
 
 # Overview(UNDONE!)
-@client.command(aliases = ['Status'])
+@client.command(aliases = ['Status', 'stat', 'Stat'])
 async def status(ctx):
-	resultList = sh_DMG.findall("TRUE")
+	cnt = 0
+	regStat = sh_DMG.col_values(2)
+	msg = "```當前集刀狀況：\n----------------\n"
+	for i in range(2, 32):
+		if regStat[i] == "TRUE":
+			ppl = sh_DMG.row_values(i+1)
+			msg = msg + str(ppl[0]) + ": " + str(ppl[2]) + ", " + str(ppl[3]) + ", " + str(ppl[8]) + "\n"
+	val = sh_DMG.cell(32,2).value
+	msg = msg + "報名人數： " + str(val) + "```"
+	await ctx.send(msg)
 
 client.run(token)
