@@ -71,14 +71,17 @@ async def unbind(ctx):
 		await ctx.send(str(ctx.message.author.mention) + ' 你根本沒綁定')
 
 # User manual -> !help
-@client.command(aliases = ['Manual', 'man'])
+@client.command(aliases = ['Manual', 'man', 'cmd'])
 async def manual(ctx):
 	await ctx.send('```Current Commands:\
-		\n\t表單名稱綁定: !bind <遊戲ID>\
+		\n\t表單名稱綁定: !unbind \
+		\n\t解除表單名稱綁定: !bind <遊戲ID>\
 		\n\t出刀傷害紀錄: !fill <週目-王> <傷害> <返還秒數>\
 		\n\t集刀報名: !報\
-		\n\t回報傷害: !卡 <傷害> <秒數> <備註>\
-		\n\t退刀: !退```')
+		\n\t回報傷害: !卡 <傷害> <秒數> <備註(選填)>\
+		\n\t退刀: !退\
+		\n\t集刀狀況： !status (Undone) \
+		\n\t表單換日： !ss <SheetName>```')
 
 # UNDONE
 # Damage filling
@@ -182,12 +185,16 @@ async def dereg(ctx):
 @client.command(aliases = ['卡'])
 async def stop(ctx):
 	inArr = str(ctx.message.content).split()
-	resultCell = sh_DMG.find(dc_dict[str(ctx.message.author.id)])
-	sh_DMG.update_cell(resultCell.row, 3, inArr[1])
-	sh_DMG.update_cell(resultCell.row, 4, inArr[2])
-	try:
-		sh_DMG.update_cell(resultCell.row, 9, inArr[3])
-	await ctx.send(str(ctx.message.author.mention) + ', 已完成回報傷害。')
+	if len(inArr) >= 3:
+		resultCell = sh_DMG.find(dc_dict[str(ctx.message.author.id)])
+		sh_DMG.update_cell(resultCell.row, 3, inArr[1])
+		sh_DMG.update_cell(resultCell.row, 4, inArr[2])
+		try:
+			sh_DMG.update_cell(resultCell.row, 9, inArr[3])
+		finally:
+			await ctx.send(str(ctx.message.author.mention) + ', 已回報傷害。')
+	else:
+		await ctx.send(str(ctx.message.author.mention) + ', Syntax Error: !卡 <傷害> <秒數> <備註(選填)>')
 
 # Overview(UNDONE!)
 @client.command(aliases = ['Status'])
