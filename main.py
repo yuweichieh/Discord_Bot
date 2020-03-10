@@ -139,18 +139,23 @@ async def fill(ctx):
 		await ctx.send(str(ctx.message.author.mention) + ', 你已經沒刀了')
 		return
 
+	if len(inArr)!=3 and len(inArr)!=4:
+		await ctx.send(str(ctx.message.author.mention) + 'Syntax Error. !fill <週目-王> <傷害> <返還秒數(Optional)>')
+		return
+	try:
+		bossInfo = inArr[1].split("-")
+	except:
+		await ctx.send(str(ctx.message.author.mention) + 'Syntax Error. !fill <**週目-王**> <傷害> <返還秒數(Optional)>')
+		return
+
 	if len(inArr) == 3:
 		await ctx.send(str(ctx.message.author.mention) + ' 成績填寫。\n對' + inArr[1] + '王造成' + inArr[2] + '傷害')
 	elif len(inArr) == 4 and (prefix == 3 or prefix == 7 or prefix == 11):
 		sh_RECORD.update_cell(resultCell.row, prefix+3, "TRUE")
 		await ctx.send(str(ctx.message.author.mention) + ' 成績填寫, \n對' + inArr[1] + '王造成' + inArr[2] + '傷害' + '\t返還：' + inArr[3])
 	elif len(inArr) == 4:
-		await ctx.send(str(ctx.message.author.mention) + ', 你的補償刀呢')
-	else:
-		await ctx.send(str(ctx.message.author.mention) + 'Syntax Error. !fill <週目-王> <傷害> <返還秒數(Optional)>')
-		return
+		await ctx.send(str(ctx.message.author.mention) + ', 你的補償刀呢')	
 
-	bossInfo = inArr[1].split("-")
 	sh_RECORD.update_cell(resultCell.row, prefix+1, bossInfo[0])
 	sh_RECORD.update_cell(resultCell.row, prefix+2, inArr[2])
 
@@ -164,7 +169,6 @@ async def fill(ctx):
 		sh_RECORD.update_cell(resultCell.row, prefix, "四王")
 	elif(bossInfo[1] == '5'):
 		sh_RECORD.update_cell(resultCell.row, prefix, "五王")
-
 
 	# Clear DMG Field after filling scores
 	resultCell = sh_DMG.find(dc_dict[str(ctx.message.author.id)])
@@ -297,15 +301,17 @@ async def stop(ctx):
 # Overview(UNDONE!)
 @client.command(aliases = ['Status', 'stat', 'Stat'])
 async def status(ctx):
-	cnt = 0
-	regStat = sh_DMG.col_values(2)
+	try:
+		regStat = sh_DMG.col_values(2)
+	except:
+		await ctx.send('```集刀表欄位撈取失敗, 請重試```')
+		return
 	msg = "```當前集刀狀況：\n----------------\n"
 	for i in range(2, 32):
 		if regStat[i] == "TRUE":
 			ppl = sh_DMG.row_values(i+1)
-			msg = msg + str(ppl[0]) + ": " + str(ppl[2]) + ", " + str(ppl[3]) + ", " + str(ppl[8]) + "\n"
-	val = sh_DMG.cell(32,2).value
-	msg = msg + "報名人數： " + str(val) + "```"
+			msg = msg + str(ppl[4]) + " - " + str(ppl[0]) + ": " + str(ppl[2]) + ", " + str(ppl[3]) + ", " + str(ppl[8]) + "\n"
+	msg = msg + "----------------\n報名人數： " + str(regStat[31]) + "```"
 	await ctx.send(msg)
 
 client.run(token)
